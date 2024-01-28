@@ -1,6 +1,6 @@
 package com.fges.todoapp;
 
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -13,28 +13,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Hello world!
- */
 public class App {
-
-    /**
-     * Do not change this method
-     */
     public static void main(String[] args) throws Exception {
         System.exit(exec(args));
     }
 
     public static int exec(String[] args) throws IOException {
-        Options cliOptions = new Options();
+        Options cliOptions = createCliOptions();
         CommandLineParser parser = new DefaultParser();
-
-        cliOptions.addRequiredOption("s", "source", true, "File containing the todos");
 
         CommandLine cmd;
         try {
@@ -56,70 +45,107 @@ public class App {
 
         Path filePath = Paths.get(fileName);
 
-        String fileContent = "";
+        String fileContent = getFileContent(filePath);
 
-        if (Files.exists(filePath)) {
-            fileContent = Files.readString(filePath);
-        }
-
-        if (command.equals("insert")) {
-            if (positionalArgs.size() < 2) {
-                System.err.println("Missing TODO name");
-                return 1;
-            }
-            String todo = positionalArgs.get(1);
-
-            if (fileName.endsWith(".json")) {
-                // JSON
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode actualObj = mapper.readTree(fileContent);
-                if (actualObj instanceof MissingNode) {
-                    // Node was not reconised
-                    actualObj = JsonNodeFactory.instance.arrayNode();
-                }
-
-                if (actualObj instanceof ArrayNode arrayNode) {
-                    arrayNode.add(todo);
-                }
-
-                Files.writeString(filePath, actualObj.toString());
-            }
-            if (fileName.endsWith(".csv")) {
-                // CSV
-                if (!fileContent.endsWith("\n") && !fileContent.isEmpty()) {
-                    fileContent += "\n";
-                }
-                fileContent += todo;
-
-                Files.writeString(filePath, fileContent);
-            }
-        }
-
-
-        if (command.equals("list")) {
-            if (fileName.endsWith(".json")) {
-                // JSON
-                ObjectMapper mapper = new ObjectMapper();
-                JsonNode actualObj = mapper.readTree(fileContent);
-                if (actualObj instanceof MissingNode) {
-                    // Node was not recognised
-                    actualObj = JsonNodeFactory.instance.arrayNode();
-                }
-
-                if (actualObj instanceof ArrayNode arrayNode) {
-                    arrayNode.forEach(node -> System.out.println("- " + node.toString()));
-                }
-            }
-            if (fileName.endsWith(".csv")) {
-                // CSV
-                System.out.println(Arrays.stream(fileContent.split("\n"))
-                        .map(todo -> "- " + todo)
-                        .collect(Collectors.joining("\n"))
-                );
-            }
-        }
+        processCommand(command, fileName, positionalArgs, fileContent);
 
         System.err.println("Done.");
         return 0;
+    }
+
+    private static Options createCliOptions() {
+        Options cliOptions = new Options();
+        cliOptions.addRequiredOption("s", "source", true, "File containing the todos");
+        return cliOptions;
+    }
+
+    private static String getFileContent(Path filePath) throws IOException {
+        return Files.exists(filePath) ? Files.readString(filePath) : "";
+    }
+
+    private static void processCommand(String command, String fileName, List<String> positionalArgs, String fileContent) throws IOException {
+        if (command.equals("insert")) {
+            processInsertCommand(fileName, positionalArgs, fileContent);
+        }
+
+        if (command.equals("list")) {
+            processListCommand(fileName, fileContent);
+        }
+    }
+
+    private static void processInsertCommand(String fileName, List<String> positionalArgs, String fileContent) throws IOException {
+        if (positionalArgs.size() < 2) {
+            System.err.println("Missing TODO name");
+            return;
+        }
+
+        String todo = positionalArgs.get(1);
+
+        if (fileName.endsWith(".json")) {
+            insertTodoToJsonFile(fileContent, todo, fileName);
+        }
+
+        if (fileName.endsWith(".csv")) {
+            insertTodoToCsvFile(fileContent, todo, fileName);
+        }
+    }
+
+    private static void insertTodoToJsonFile(String fileContent, String todo, String fileName) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode actualObj = mapper.readTree(fileContent);
+
+        if (actualObj instanceof MissingNode) {
+            actualObj = JsonNodeFactory.instance.arrayNode();
+        }
+
+        if (actualObj instanceof ArrayNode arrayNode) {
+            arrayNode.add(todo);
+        }
+
+        Files.writeString(Paths.get(fileName), actualObj.toString());
+    }
+
+    private static void insertTodoToCsvFile(String fileContent, String todo, String fileName) throws IOException {
+        if (!fileContent.endsWith("\n") && !fileContent.isEmpty()) {
+            fileContent += "\n";
+        }
+        fileContent += todo;
+
+        Files.writeString(Paths.get(fileName), fileContent);
+    }
+
+    private static void processListCommand(String fileName, String fileContent) {
+        if (fileName.endsWith(".json")) {
+            listTodosFromJsonFile(fileContent);
+        }
+
+        if (fileName.endsWith(".csv")) {
+            listTodosFromCsvFile(fileContent);
+        }
+    }
+
+    private static void listTodosFromJsonFile(String fileContent) {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode actualObj = null;
+        try {
+            actualObj = mapper.readTree(fileContent);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (actualObj instanceof MissingNode) {
+            actualObj = JsonNodeFactory.instance.arrayNode();
+        }
+
+        if (actualObj instanceof ArrayNode arrayNode) {
+            arrayNode.forEach(node -> System.out.println("- " + node.toString()));
+        }
+    }
+
+    private static void listTodosFromCsvFile(String fileContent) {
+        System.out.println(Arrays.stream(fileContent.split("\n"))
+                .map(todo -> "- " + todo)
+                .collect(Collectors.joining("\n"))
+        );
     }
 }
