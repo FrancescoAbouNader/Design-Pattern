@@ -18,6 +18,16 @@
 > - 5) J'ai regroupé des fonctionnalités similaires pour éliminer la duplication de code.
 > 
 > - 4/2/2024
+> - pour afficher les todos qui sont done ou pas:
+> - 1) Ajout de l'option "--done" à l'objet "Options" en utilisant cliOptions.addOption("d", "done", false, "Marquer la tâche comme terminée");.
+> - 2) Modification de "processInsertCommand" pour accepter un paramètre boolean "isDone", indiquant si la tâche est terminée.
+       Dans "insertTodoToJsonFile", création d'un "ObjectNode" pour chaque tâche, comprenant les propriétés "name" et "done". La propriété "done" est définie en fonction du paramètre "isDone".
+> - 3) Mise à jour de "processListCommand" pour accepter un paramètre boolean "showDone".
+       Dans listTodosFromJsonFile, ajout d'une logique pour vérifier la propriété "done" de chaque tâche et afficher "Done: " avant la tâche si elle est marquée comme terminée. La logique d'affichage est ajustée en fonction du paramètre "showDone".
+> - 4) Modification de la méthode "createCliOptions" pour inclure l'option "--done".
+       Mise à jour de la méthode "processCommand" pour passer la valeur du drapeau "--done" lors de l'appel de "processInsertCommand" et "processListCommand".
+> 
+> - pour améliorer le code:
 > - 1) Création d'une nouvelle classe "TodoProcessor" pour gérer les opérations liées aux tâches (todos).
 > - 2) J'ai retirer "static" des méthodes dans la classe "TodoProcessor".
 > - 3) Création d'une instance de "TodoProcessor" dans la classe "App".
