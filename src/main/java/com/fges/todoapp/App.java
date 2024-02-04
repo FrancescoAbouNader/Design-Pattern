@@ -155,9 +155,11 @@ class TodoProcessor {
             arrayNode.forEach(node -> {
                 boolean isDone = node.get("done") != null && node.get("done").asBoolean();
                 if (!showDone && isDone) {
-                    return;
+                    System.out.println((isDone ? "Done: " : "") + "- " + node.get("name").asText());
                 }
-                System.out.println((isDone ? "Done: " : "") + "- " + node.get("name").asText());
+                else{
+                System.out.println( node.get("name").asText());
+                }
             });
         }
     }

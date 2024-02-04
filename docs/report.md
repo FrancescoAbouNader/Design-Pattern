@@ -16,7 +16,16 @@
 > - 3) J'ai encapsulé la logique de récupération du contenu du fichier pour améliorer la réutilisation du code et la facilité de maintenance.
 > - 4) J'ai maintenu une utilisation cohérente des chemins et supprimé les commentaires inutiles pour plus de clarté.
 > - 5) J'ai regroupé des fonctionnalités similaires pour éliminer la duplication de code.
-> - 
+> 
+> - 4/2/2024
+> - 1) Création d'une nouvelle classe "TodoProcessor" pour gérer les opérations liées aux tâches (todos).
+> - 2) J'ai retirer "static" des méthodes dans la classe "TodoProcessor".
+> - 3) Création d'une instance de "TodoProcessor" dans la classe "App".
+> - 4) Déplacement de l'instanciation de "ObjectMapper" dans le constructeur de "TodoProcessor".
+> - 5) Regroupement des méthodes dans "TodoProcessor" en fonction de leur fonctionnalité.
+> - 6) Conservation de la logique de traitement en ligne de commande dans la classe App.
+> - 7) Découpage du code en classes et méthodes plus petites et spécialisées.
+>
 > - What helped you and why
 > - 
 > - Mes connaissances precedentes en Java et oop
