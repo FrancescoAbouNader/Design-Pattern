@@ -58,7 +58,7 @@
 > - J'ai concentré mes efforts sur la restructuration et l'organisation du code afin de respecter davantage les principes SOLID, en particulier le "Single Responsibility Principle". J'ai introduit des méthodes pour gérer des responsabilités spécifiques telles que le traitement des commandes, la récupération du contenu du fichier et les actions pour les fichiers JSON et CSV. Cette restructuration vise à rendre le code plus modulaire, lisible et maintenable.
 > 
 > Add a link to schemas describing your architecture (UML or not but add a legend)
-> ![Uml](uml2.jpg)
+> ![UML](uml2.jpg)
 > 
 > Remember: it is ok to make mistakes, you will have time to spot them later.
 > 
