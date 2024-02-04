@@ -1,11 +1,11 @@
 package com.fges.todoapp;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.MissingNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.commons.cli.*;
 
 import java.io.IOException;
@@ -47,7 +47,9 @@ public class App {
 
         String fileContent = getFileContent(filePath);
 
-        processCommand(command, fileName, positionalArgs, fileContent);
+        TodoProcessor todoProcessor = new TodoProcessor();
+
+        todoProcessor.process(command, fileName, positionalArgs, fileContent);
 
         System.err.println("Done.");
         return 0;
@@ -56,24 +58,35 @@ public class App {
     private static Options createCliOptions() {
         Options cliOptions = new Options();
         cliOptions.addRequiredOption("s", "source", true, "File containing the todos");
+        cliOptions.addOption("d", "done", false, "Mark the todo as done");
         return cliOptions;
     }
 
     private static String getFileContent(Path filePath) throws IOException {
         return Files.exists(filePath) ? Files.readString(filePath) : "";
     }
+}
 
-    private static void processCommand(String command, String fileName, List<String> positionalArgs, String fileContent) throws IOException {
+class TodoProcessor {
+    private final ObjectMapper mapper;
+
+    public TodoProcessor() {
+        this.mapper = new ObjectMapper();
+    }
+
+    public void process(String command, String fileName, List<String> positionalArgs, String fileContent) throws IOException {
         if (command.equals("insert")) {
-            processInsertCommand(fileName, positionalArgs, fileContent);
+            boolean isDone = false;
+            processInsertCommand(fileName, positionalArgs, fileContent, isDone);
         }
 
         if (command.equals("list")) {
-            processListCommand(fileName, fileContent);
+            boolean showDone = false;
+            processListCommand(fileName, fileContent, showDone);
         }
     }
 
-    private static void processInsertCommand(String fileName, List<String> positionalArgs, String fileContent) throws IOException {
+    private void processInsertCommand(String fileName, List<String> positionalArgs, String fileContent, boolean isDone) throws IOException {
         if (positionalArgs.size() < 2) {
             System.err.println("Missing TODO name");
             return;
@@ -82,7 +95,7 @@ public class App {
         String todo = positionalArgs.get(1);
 
         if (fileName.endsWith(".json")) {
-            insertTodoToJsonFile(fileContent, todo, fileName);
+            insertTodoToJsonFile(fileContent, todo, fileName, isDone);
         }
 
         if (fileName.endsWith(".csv")) {
@@ -90,8 +103,7 @@ public class App {
         }
     }
 
-    private static void insertTodoToJsonFile(String fileContent, String todo, String fileName) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+    private void insertTodoToJsonFile(String fileContent, String todo, String fileName, boolean isDone) throws IOException {
         JsonNode actualObj = mapper.readTree(fileContent);
 
         if (actualObj instanceof MissingNode) {
@@ -99,13 +111,16 @@ public class App {
         }
 
         if (actualObj instanceof ArrayNode arrayNode) {
-            arrayNode.add(todo);
+            ObjectNode todoNode = mapper.createObjectNode();
+            todoNode.put("name", todo);
+            todoNode.put("done", isDone);
+            arrayNode.add(todoNode);
         }
 
         Files.writeString(Paths.get(fileName), actualObj.toString());
     }
 
-    private static void insertTodoToCsvFile(String fileContent, String todo, String fileName) throws IOException {
+    private void insertTodoToCsvFile(String fileContent, String todo, String fileName) throws IOException {
         if (!fileContent.endsWith("\n") && !fileContent.isEmpty()) {
             fileContent += "\n";
         }
@@ -114,9 +129,9 @@ public class App {
         Files.writeString(Paths.get(fileName), fileContent);
     }
 
-    private static void processListCommand(String fileName, String fileContent) {
+    private void processListCommand(String fileName, String fileContent, boolean showDone) {
         if (fileName.endsWith(".json")) {
-            listTodosFromJsonFile(fileContent);
+            listTodosFromJsonFile(fileContent, showDone);
         }
 
         if (fileName.endsWith(".csv")) {
@@ -124,12 +139,11 @@ public class App {
         }
     }
 
-    private static void listTodosFromJsonFile(String fileContent) {
-        ObjectMapper mapper = new ObjectMapper();
+    private void listTodosFromJsonFile(String fileContent, boolean showDone) {
         JsonNode actualObj = null;
         try {
             actualObj = mapper.readTree(fileContent);
-        } catch (JsonProcessingException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
@@ -138,7 +152,13 @@ public class App {
         }
 
         if (actualObj instanceof ArrayNode arrayNode) {
-            arrayNode.forEach(node -> System.out.println("- " + node.toString()));
+            arrayNode.forEach(node -> {
+                boolean isDone = node.get("done") != null && node.get("done").asBoolean();
+                if (!showDone && isDone) {
+                    return;
+                }
+                System.out.println((isDone ? "Done: " : "") + "- " + node.get("name").asText());
+            });
         }
     }
 
