@@ -36,6 +36,9 @@
 > - 6) Conservation de la logique de traitement en ligne de commande dans la classe App.
 > - 7) Découpage du code en classes et méthodes plus petites et spécialisées.
 >
+> - 10/2/2024
+> - J'ai séparé les deux classes "App" et "TodoProcessor" en different fichier pour rendre le code plus claire
+> 
 > - What helped you and why
 > - 
 > - Mes connaissances precedentes en Java et oop
